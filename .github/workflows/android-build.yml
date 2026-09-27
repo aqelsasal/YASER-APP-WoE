@@ -26,6 +26,12 @@ jobs:
           distribution: 'zulu'
           java-version: 17
 
+      - name: Setup Gradle 8.2
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.2'
+          cache-disabled: true
+
       - name: Extract Project Zip and Total Cleanup
         run: |
           if [ -f "Project.zip" ]; then
@@ -76,19 +82,19 @@ jobs:
           npx cap copy android || true
           npx cap sync android || true
 
-      - name: Build Debug APK via Capacitor CLI
+      - name: Repair Wrapper and Build Debug APK
         run: |
           cd ${{ env.TARGET_DIR }}
           
-          # الانتقال لمجلد android
-          ANDROID_DIR=$(dirname $(find . -name "gradlew" | head -n 1))
+          ANDROID_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
           cd "$ANDROID_DIR"
           
-          # تنظيف الكاش وإعطاء صلاحيات التشغيل
-          chmod +x gradlew
+          # حذف الملف المعطوب وتوليده مجدداً بواسطة Gradle المثبت في النظام
+          rm -f gradle/wrapper/gradle-wrapper.jar
+          gradle wrapper --gradle-version 8.2
           
-          # البناء المستقر باستخدام gradlew الخاص بالمشروع مع إعدادات الذاكرة المناسبة
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
