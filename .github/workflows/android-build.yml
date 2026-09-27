@@ -40,11 +40,11 @@ jobs:
           cd "$TARGET_DIR"
           rm -rf node_modules package-lock.json yarn.lock bun.lockb dist build .vite android
 
-      - name: Install Project Dependencies
+      - name: Install Project Dependencies & Missing Bindings
         run: |
           cd ${{ env.TARGET_DIR }}
           npm install --legacy-peer-deps
-          npm install @capacitor/core @capacitor/cli @capacitor/android --legacy-peer-deps
+          npm install react-is lucide-react clsx tailwind-merge @capacitor/core @capacitor/cli @capacitor/android --legacy-peer-deps
 
       - name: Fix Vite Workbox Config & Build Web App
         run: |
