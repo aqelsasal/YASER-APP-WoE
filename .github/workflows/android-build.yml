@@ -1,0 +1,73 @@
+name: Build Android APK from Zip
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Extract Project Zip
+        run: |
+          if [ -f "Project.zip" ]; then
+            unzip -o Project.zip
+          elif [ -f "project.zip" ]; then
+            unzip -o project.zip
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: 17
+
+      - name: Install Dependencies
+        run: |
+          if [ -f "package.json" ]; then
+            npm install --legacy-peer-deps
+          else
+            TARGET_DIR=$(dirname $(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1))
+            cd "$TARGET_DIR" && npm install --legacy-peer-deps
+          fi
+
+      - name: Build Web App
+        run: |
+          if [ -f "package.json" ]; then
+            npm run build
+          else
+            TARGET_DIR=$(dirname $(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1))
+            cd "$TARGET_DIR" && npm run build
+          fi
+
+      - name: Sync Capacitor Android
+        run: |
+          TARGET_DIR=$(dirname $(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1))
+          cd "$TARGET_DIR"
+          npx cap copy android || true
+          npx cap sync android || true
+
+      - name: Build Debug APK
+        run: |
+          GRADLE_DIR=$(dirname $(find . -name "gradlew" | head -n 1))
+          cd "$GRADLE_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: '**/outputs/apk/debug/app-debug.apk'
