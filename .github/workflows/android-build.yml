@@ -34,11 +34,9 @@ jobs:
             unzip -o project.zip
           fi
 
-          # البحث عن المجلد الحاوي لـ package.json
           TARGET_DIR=$(dirname $(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1))
           echo "TARGET_DIR=$TARGET_DIR" >> $GITHUB_ENV
           
-          # مسح شامل لأي مجلدات معطوبة استخرجت من الـ Zip
           cd "$TARGET_DIR"
           rm -rf node_modules package-lock.json yarn.lock bun.lockb dist build .vite
 
@@ -47,10 +45,10 @@ jobs:
           cd ${{ env.TARGET_DIR }}
           npm install --legacy-peer-deps
 
-      - name: Fix Linux Native Bindings for Vite and Tailwind
+      - name: Fix Missing Dependencies and Native Bindings
         run: |
           cd ${{ env.TARGET_DIR }}
-          npm install --save-dev @esbuild/linux-x64 @tailwindcss/oxide-linux-x64-gnu --legacy-peer-deps || true
+          npm install react-is @esbuild/linux-x64 @tailwindcss/oxide-linux-x64-gnu --legacy-peer-deps || true
 
       - name: Build Web App
         run: |
