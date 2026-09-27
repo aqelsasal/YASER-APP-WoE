@@ -50,9 +50,18 @@ jobs:
           cd ${{ env.TARGET_DIR }}
           npm install react-is @esbuild/linux-x64 @tailwindcss/oxide-linux-x64-gnu --legacy-peer-deps || true
 
-      - name: Build Web App
+      - name: Build Web App (Bypass Workbox Limit)
         run: |
           cd ${{ env.TARGET_DIR }}
+          
+          # رفع حد التخزين المؤقت لـ Workbox إلى 10 ميجابايت في ملف الإعدادات تلقائياً إن وجد
+          if [ -f "vite.config.ts" ]; then
+            sed -i 's/pwa({/pwa({workbox:{maximumFileSizeToCacheInBytes:10000000},/g' vite.config.ts || true
+          fi
+          if [ -f "vite.config.js" ]; then
+            sed -i 's/pwa({/pwa({workbox:{maximumFileSizeToCacheInBytes:10000000},/g' vite.config.js || true
+          fi
+
           NODE_OPTIONS="--experimental-global-webcrypto" npm run build
 
       - name: Sync Capacitor Android
