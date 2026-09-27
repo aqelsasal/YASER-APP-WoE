@@ -20,17 +20,11 @@ jobs:
         with:
           node-version: 20
 
-      - name: Set up Java JDK 11
+      - name: Set up Java JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: 11
-
-      - name: Setup Gradle 7.6.3
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '7.6.3'
-          cache-disabled: true
+          java-version: 17
 
       - name: Extract Project Zip and Total Cleanup
         run: |
@@ -82,17 +76,19 @@ jobs:
           npx cap copy android || true
           npx cap sync android || true
 
-      - name: Clean & Build APK
+      - name: Build Debug APK via Capacitor CLI
         run: |
-          rm -rf ~/.gradle/caches/
+          cd ${{ env.TARGET_DIR }}
           
-          ANDROID_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
+          # الانتقال لمجلد android
+          ANDROID_DIR=$(dirname $(find . -name "gradlew" | head -n 1))
           cd "$ANDROID_DIR"
           
-          gradle wrapper --gradle-version 7.6.3
+          # تنظيف الكاش وإعطاء صلاحيات التشغيل
           chmod +x gradlew
           
-          ./gradlew assembleDebug --no-daemon
+          # البناء المستقر باستخدام gradlew الخاص بالمشروع مع إعدادات الذاكرة المناسبة
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
