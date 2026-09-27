@@ -26,8 +26,10 @@ jobs:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Setup Gradle
+      - name: Setup Gradle 8.2
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.2'
 
       - name: Extract Project Zip and Total Cleanup
         run: |
@@ -79,18 +81,13 @@ jobs:
           npx cap copy android || true
           npx cap sync android || true
 
-      - name: Regenerate Compatible Gradle Wrapper and Build APK
+      - name: Build Debug APK
         run: |
           ANDROID_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
           cd "$ANDROID_DIR"
           
-          rm -f gradle/wrapper/gradle-wrapper.jar
-          
-          # إجبار استخدام إصدار Gradle 8.2 المتوافق مع Capacitor
-          gradle wrapper --gradle-version 8.2
-          
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          # البناء مباشرة باستخدام امر gradle العام بالإصدار 8.2 المختار
+          gradle assembleDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
