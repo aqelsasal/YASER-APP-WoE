@@ -26,6 +26,9 @@ jobs:
           distribution: 'zulu'
           java-version: 17
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Extract Project Zip and Total Cleanup
         run: |
           if [ -f "Project.zip" ]; then
@@ -54,7 +57,6 @@ jobs:
         run: |
           cd ${{ env.TARGET_DIR }}
           
-          # حقن خاصية maximumFileSizeToCacheInBytes داخل كائن workbox الموجود حالياً
           find . -maxdepth 3 -name "vite.config.*" -exec node -e '
             const fs = require("fs");
             const file = process.argv[1];
@@ -77,10 +79,17 @@ jobs:
           npx cap copy android || true
           npx cap sync android || true
 
-      - name: Build Debug APK
+      - name: Regenerate Gradle Wrapper and Build APK
         run: |
-          GRADLE_DIR=$(dirname $(find . -name "gradlew" | head -n 1))
-          cd "$GRADLE_DIR"
+          ANDROID_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
+          cd "$ANDROID_DIR"
+          
+          # حذف الملف المعطوب كلياً
+          rm -f gradle/wrapper/gradle-wrapper.jar
+          
+          # إعادة توليد الملف بواسطة Gradle النظام
+          gradle wrapper
+          
           chmod +x gradlew
           ./gradlew assembleDebug
 
