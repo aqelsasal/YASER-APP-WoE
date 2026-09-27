@@ -26,12 +26,6 @@ jobs:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Install System Gradle 8.2
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.2'
-          cache-disabled: true
-
       - name: Extract Project Zip and Total Cleanup
         run: |
           if [ -f "Project.zip" ]; then
@@ -82,18 +76,25 @@ jobs:
           npx cap copy android || true
           npx cap sync android || true
 
-      - name: Purge Cache & Direct System Gradle Build
+      - name: Clean Cache and Build Debug APK
         run: |
-          # تفريغ أجزاء كاش Gradle المعطوبة
-          rm -rf ~/.gradle/caches/
-          rm -rf ~/.gradle/daemon/
+          # حذف أي كاش سابق قديم نهائياً
+          rm -rf ~/.gradle/
           
           cd ${{ env.TARGET_DIR }}
           ANDROID_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
           cd "$ANDROID_DIR"
           
-          # البناء مباشرة عبر النظام بدون daemon وتجنب تعارضات Wrapper
-          gradle assembleDebug --no-daemon --no-parallel -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=512m"
+          # إجبار إعداد إصدار Gradle إلى 8.2 في ملف الإعدادات
+          if [ -f "gradle/wrapper/gradle-wrapper.properties" ]; then
+            sed -i 's/distributionUrl=.*/distributionUrl=https\\:\/\/services.gradle.org\/distributions\/gradle-8.2-bin.zip/' gradle/wrapper/gradle-wrapper.properties
+          fi
+          
+          # تنزيل الجار وتحديث السكربت
+          chmod +x gradlew || true
+          
+          # البناء النظيف مباشرة
+          ./gradlew assembleDebug --no-daemon --no-parallel
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
