@@ -79,16 +79,15 @@ jobs:
           npx cap copy android || true
           npx cap sync android || true
 
-      - name: Regenerate Gradle Wrapper and Build APK
+      - name: Regenerate Compatible Gradle Wrapper and Build APK
         run: |
           ANDROID_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
           cd "$ANDROID_DIR"
           
-          # حذف الملف المعطوب كلياً
           rm -f gradle/wrapper/gradle-wrapper.jar
           
-          # إعادة توليد الملف بواسطة Gradle النظام
-          gradle wrapper
+          # إجبار استخدام إصدار Gradle 8.2 المتوافق مع Capacitor
+          gradle wrapper --gradle-version 8.2
           
           chmod +x gradlew
           ./gradlew assembleDebug
