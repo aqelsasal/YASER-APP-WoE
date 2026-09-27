@@ -50,17 +50,21 @@ jobs:
           cd ${{ env.TARGET_DIR }}
           npm install react-is @esbuild/linux-x64 @tailwindcss/oxide-linux-x64-gnu --legacy-peer-deps || true
 
-      - name: Build Web App (Bypass Workbox Limit)
+      - name: Build Web App (Override Workbox Limit)
         run: |
           cd ${{ env.TARGET_DIR }}
           
-          # رفع حد التخزين المؤقت لـ Workbox إلى 10 ميجابايت في ملف الإعدادات تلقائياً إن وجد
-          if [ -f "vite.config.ts" ]; then
-            sed -i 's/pwa({/pwa({workbox:{maximumFileSizeToCacheInBytes:10000000},/g' vite.config.ts || true
-          fi
-          if [ -f "vite.config.js" ]; then
-            sed -i 's/pwa({/pwa({workbox:{maximumFileSizeToCacheInBytes:10000000},/g' vite.config.js || true
-          fi
+          # تعديل شامل لملفات إعدادات Vite لزيادة حد التخزين لـ 15 ميجابايت
+          find . -maxdepth 3 -name "vite.config.*" -exec node -e '
+            const fs = require("fs");
+            const file = process.argv[1];
+            let content = fs.readFileSync(file, "utf8");
+            if (content.includes("VitePWA") || content.includes("pwa")) {
+              content = content.replace(/VitePWA\(\{/g, "VitePWA({workbox:{maximumFileSizeToCacheInBytes:15000000},");
+              content = content.replace(/pwa\(\{/g, "pwa({workbox:{maximumFileSizeToCacheInBytes:15000000},");
+              fs.writeFileSync(file, content);
+            }
+          ' {} \;
 
           NODE_OPTIONS="--experimental-global-webcrypto" npm run build
 
