@@ -76,24 +76,18 @@ jobs:
           npx cap copy android || true
           npx cap sync android || true
 
-      - name: Clean Cache and Build Debug APK
+      - name: Auto-Fix Gradle Wrapper & Build Debug APK
         run: |
-          # حذف أي كاش سابق قديم نهائياً
-          rm -rf ~/.gradle/
-          
           cd ${{ env.TARGET_DIR }}
-          ANDROID_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
+          
+          # البحث عن مجلد android بدقة
+          ANDROID_DIR=$(dirname $(find . -name "build.gradle" -not -path "*/node_modules/*" | head -n 1))
           cd "$ANDROID_DIR"
           
-          # إجبار إعداد إصدار Gradle إلى 8.2 في ملف الإعدادات
-          if [ -f "gradle/wrapper/gradle-wrapper.properties" ]; then
-            sed -i 's/distributionUrl=.*/distributionUrl=https\\:\/\/services.gradle.org\/distributions\/gradle-8.2-bin.zip/' gradle/wrapper/gradle-wrapper.properties
-          fi
+          # توليد Wrapper نظيف ببطاقة حماية تفادياً لغياب gradlew
+          gradle wrapper --gradle-version 8.2
           
-          # تنزيل الجار وتحديث السكربت
-          chmod +x gradlew || true
-          
-          # البناء النظيف مباشرة
+          chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --no-parallel
 
       - name: Upload APK Artifact
