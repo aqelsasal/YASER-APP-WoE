@@ -15,16 +15,20 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Extract Project Zip and Clean Node Modules
+      - name: Extract Project Zip and Force Clean
         run: |
           if [ -f "Project.zip" ]; then
             unzip -o Project.zip
           elif [ -f "project.zip" ]; then
             unzip -o project.zip
           fi
-          # حذف أي مجلد node_modules أو package-lock قديم معطوب
-          find . -name "node_modules" -type d -exec rm -rf {} + || true
-          find . -name "package-lock.json" -type f -delete || true
+
+          # البحث عن المجلد الذي يحتوي على package.json والتنظيف الشامل داخله
+          TARGET_DIR=$(dirname $(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1))
+          cd "$TARGET_DIR"
+          
+          # حذف المجلدات والملفات التي تسبب تعارض المنصات
+          rm -rf node_modules package-lock.json yarn.lock bun.lockb
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -37,11 +41,17 @@ jobs:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Install Dependencies
+      - name: Clean Install Dependencies
         run: |
           TARGET_DIR=$(dirname $(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1))
           cd "$TARGET_DIR"
-          npm install --legacy-peer-deps
+          npm install --force
+
+      - name: Rebuild Native Dependencies
+        run: |
+          TARGET_DIR=$(dirname $(find . -name "package.json" -not -path "*/node_modules/*" | head -n 1))
+          cd "$TARGET_DIR"
+          npm rebuild
 
       - name: Build Web App
         run: |
