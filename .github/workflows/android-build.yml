@@ -1,4 +1,4 @@
-name: Build Android APK from Zip
+name: Build Android APK from AI Studio Zip
 
 on:
   push:
@@ -20,19 +20,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Set up Java JDK 17
+      - name: Set up Java JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: 17
+          java-version: 21
 
-      - name: Setup Specific Gradle Version 8.2
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.2'
-          cache-disabled: true
-
-      - name: Extract Project Zip and Total Cleanup
+      - name: Extract Project Zip & Full Cleanup
         run: |
           if [ -f "Project.zip" ]; then
             unzip -o Project.zip
@@ -44,19 +38,15 @@ jobs:
           echo "TARGET_DIR=$TARGET_DIR" >> $GITHUB_ENV
           
           cd "$TARGET_DIR"
-          rm -rf node_modules package-lock.json yarn.lock bun.lockb dist build .vite
+          rm -rf node_modules package-lock.json yarn.lock bun.lockb dist build .vite android
 
-      - name: Clean Install Dependencies
+      - name: Install Project Dependencies
         run: |
           cd ${{ env.TARGET_DIR }}
           npm install --legacy-peer-deps
+          npm install @capacitor/core @capacitor/cli @capacitor/android --legacy-peer-deps
 
-      - name: Fix Missing Dependencies and Native Bindings
-        run: |
-          cd ${{ env.TARGET_DIR }}
-          npm install react-is @esbuild/linux-x64 @tailwindcss/oxide-linux-x64-gnu --legacy-peer-deps || true
-
-      - name: Build Web App (Patch Existing Workbox Config)
+      - name: Fix Vite Workbox Config & Build Web App
         run: |
           cd ${{ env.TARGET_DIR }}
           
@@ -76,26 +66,24 @@ jobs:
 
           NODE_OPTIONS="--experimental-global-webcrypto" npm run build
 
-      - name: Sync Capacitor Android
+      - name: Generate Fresh Android Project & Sync
         run: |
           cd ${{ env.TARGET_DIR }}
-          npx cap copy android || true
-          npx cap sync android || true
+          npx cap init "YASER APP" "com.yaser.app" --web-dir dist || true
+          npx cap add android
+          npx cap sync android
 
-      - name: Safe Clean Cache & Build Debug APK
+      - name: Setup Gradle 8.4
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
+          cache-disabled: true
+
+      - name: Clean Build Debug APK
         run: |
-          cd ${{ env.TARGET_DIR }}
-          
-          # البحث عن مجلد android
-          ANDROID_DIR=$(dirname $(find . -name "build.gradle" -not -path "*/node_modules/*" | head -n 1))
-          cd "$ANDROID_DIR"
-          
-          # مسح ملفات الكاش المؤقتة لتفادي التعارض السابق
-          rm -rf ~/.gradle/caches/
-          rm -rf ~/.gradle/daemon/
-          
-          # البناء المستمر باستخدام Gradle 8.2 المختار بوضوح
-          gradle assembleDebug --no-daemon --no-parallel -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=512m"
+          cd ${{ env.TARGET_DIR }}/android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --no-parallel -Dorg.gradle.jvmargs="-Xmx3072m"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
