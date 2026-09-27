@@ -82,13 +82,20 @@ jobs:
           npx cap copy android || true
           npx cap sync android || true
 
-      - name: Build Debug APK
+      - name: Clean Gradle Cache & Build APK
         run: |
+          # مسح كاش Gradle بالكامل وحذف أي ملفات معطوبة
+          rm -rf ~/.gradle/caches/
+          
           ANDROID_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
           cd "$ANDROID_DIR"
           
-          # البناء بدون daemon لتفادي تعارض الـ Jar cache
-          gradle assembleDebug --no-daemon --no-parallel
+          # إعادة إنشاء Wrapper نظيف بدون تعارضات
+          gradle wrapper --gradle-version 8.2
+          chmod +x gradlew
+          
+          # تنفيذ البناء بالاعتماد على Wrapper النظيف
+          ./gradlew assembleDebug --no-daemon -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=512m"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
