@@ -30,6 +30,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.2'
+          cache-disabled: true
 
       - name: Extract Project Zip and Total Cleanup
         run: |
@@ -86,8 +87,8 @@ jobs:
           ANDROID_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
           cd "$ANDROID_DIR"
           
-          # البناء مباشرة باستخدام امر gradle العام بالإصدار 8.2 المختار
-          gradle assembleDebug
+          # البناء بدون daemon لتفادي تعارض الـ Jar cache
+          gradle assembleDebug --no-daemon --no-parallel
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
