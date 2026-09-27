@@ -26,7 +26,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Setup Gradle 8.2
+      - name: Install System Gradle 8.2
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.2'
@@ -82,19 +82,18 @@ jobs:
           npx cap copy android || true
           npx cap sync android || true
 
-      - name: Repair Wrapper and Build Debug APK
+      - name: Purge Cache & Direct System Gradle Build
         run: |
-          cd ${{ env.TARGET_DIR }}
+          # تفريغ أجزاء كاش Gradle المعطوبة
+          rm -rf ~/.gradle/caches/
+          rm -rf ~/.gradle/daemon/
           
+          cd ${{ env.TARGET_DIR }}
           ANDROID_DIR=$(dirname $(find . -name "build.gradle" | head -n 1))
           cd "$ANDROID_DIR"
           
-          # حذف الملف المعطوب وتوليده مجدداً بواسطة Gradle المثبت في النظام
-          rm -f gradle/wrapper/gradle-wrapper.jar
-          gradle wrapper --gradle-version 8.2
-          
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          # البناء مباشرة عبر النظام بدون daemon وتجنب تعارضات Wrapper
+          gradle assembleDebug --no-daemon --no-parallel -Dorg.gradle.jvmargs="-Xmx3072m -XX:MaxMetaspaceSize=512m"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
