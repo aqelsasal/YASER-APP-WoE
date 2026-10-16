@@ -55,8 +55,9 @@ jobs:
             const file = process.argv[1];
             let content = fs.readFileSync(file, "utf8");
             
-            // تنظيف أي تكرار سابق لتفادي الأخطاء
-            content = content.replace(/maximumFileSizeToCacheInBytes:\s*\d+,?/g, "");
+            // تنظيف أي أسطر تالفة قد أضيفت سابقاً لتفادي الأخطاء البرمجية
+            content = content.replace(/\*\s*1024\s*\*\s*1024[^\n]*/g, "");
+            content = content.replace(/maximumFileSizeToCacheInBytes:[^\n]*/g, "");
             
             if (content.includes("workbox:")) {
               content = content.replace(/workbox:\s*\{/, "workbox: {\n      maximumFileSizeToCacheInBytes: 15000000,");
@@ -85,10 +86,7 @@ jobs:
       - name: Clean Build Debug APK
         run: |
           cd ${{ env.TARGET_DIR }}/android
-          
-          # تثبيت إصدار Gradle 8.4 حصرياً لضمان عدم حدوث مشاكل مهلة الاتصال
           ./gradlew wrapper --gradle-version 8.4
-          
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --no-parallel -Dorg.gradle.jvmargs="-Xmx3072m"
 
