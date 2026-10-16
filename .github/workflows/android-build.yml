@@ -20,11 +20,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Set up Java JDK 17
+      - name: Set up Java JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: 17
+          java-version: 21
 
       - name: Extract Project Zip & Full Cleanup
         run: |
@@ -55,7 +55,6 @@ jobs:
             const file = process.argv[1];
             let content = fs.readFileSync(file, "utf8");
             
-            // تنظيف أي أسطر تالفة قد أضيفت سابقاً لتفادي الأخطاء البرمجية
             content = content.replace(/\*\s*1024\s*\*\s*1024[^\n]*/g, "");
             content = content.replace(/maximumFileSizeToCacheInBytes:[^\n]*/g, "");
             
@@ -77,16 +76,16 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Setup Gradle 8.4
+      - name: Setup Gradle 8.13
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: '8.4'
+          gradle-version: '8.13'
           cache-disabled: false
 
       - name: Clean Build Debug APK
         run: |
           cd ${{ env.TARGET_DIR }}/android
-          ./gradlew wrapper --gradle-version 8.4
+          ./gradlew wrapper --gradle-version 8.13
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --no-parallel -Dorg.gradle.jvmargs="-Xmx3072m"
 
