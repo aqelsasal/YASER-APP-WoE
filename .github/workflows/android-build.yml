@@ -72,9 +72,14 @@ jobs:
       - name: Generate Fresh Android Project & Sync
         run: |
           cd ${{ env.TARGET_DIR }}
-          npx cap init "YASER APP" "com.yaser.app" --web-dir dist || true
+          npx cap init "World of Elites Accounts" "com.yaser.app" --web-dir dist || true
           npx cap add android
           npx cap sync android
+
+      - name: Create Consistent Debug Keystore
+        run: |
+          cd ${{ env.TARGET_DIR }}/android/app
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Setup Gradle 8.13
         uses: gradle/actions/setup-gradle@v3
