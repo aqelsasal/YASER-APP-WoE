@@ -79,17 +79,12 @@ jobs:
       - name: Create & Force Consistent Signing Config
         run: |
           cd ${{ env.TARGET_DIR }}/android/app
-          
-          # 1. توليد مفتاح التوقيع الثابت
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" || true
-
-          # 2. حقن إعدادات التوقيع مباشرة داخل ملف build.gradle لضمان تطابق البصمة برمجياً
           cd ..
-          node -e '\''
+          node -e '
             const fs = require("fs");
             const gradlePath = "app/build.gradle";
             let content = fs.readFileSync(gradlePath, "utf8");
-            
             if (!content.includes("signingConfigs")) {
               const target = " buildTypes {";
               const replacement = `
@@ -107,7 +102,7 @@ jobs:
               fs.writeFileSync(gradlePath, content, "utf8");
               console.log("Successfully injected signingConfigs into build.gradle");
             }
-          '\''
+          '
 
       - name: Setup Gradle 8.13
         uses: gradle/actions/setup-gradle@v3
